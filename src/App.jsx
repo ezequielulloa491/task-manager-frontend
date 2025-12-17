@@ -1,32 +1,58 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TaskForm from "./components/TaskForm";
 import TaskList from "./components/TaskList";
+
+const API_URL = "https://task-manager-backend-yvwq.onrender.com";
 
 function App() {
   const [tasks, setTasks] = useState([]);
 
-  const addTask = (title) => {
-    const newTask = {
-      id: Date.now(),
-      title,
-      completed: false,
+  // Obtener tareas del backend
+  const fetchTasks = async () => {
+    const res = await fetch(`${API_URL}/tasks`);
+    const data = await res.json();
+    setTasks(data);
+  };
+
+  // Crear tarea
+  const addTask = async (title) => {
+    await fetch(`${API_URL}/tasks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title }),
+    });
+
+    await fetchTasks();
+  };
+
+  // Marcar como completada
+  const toggleTask = async (id) => {
+    await fetch(`${API_URL}/tasks/${id}`, {
+      method: "PUT",
+    });
+
+    await fetchTasks();
+  };
+
+  // Eliminar tarea
+  const deleteTask = async (id) => {
+    await fetch(`${API_URL}/tasks/${id}`, {
+      method: "DELETE",
+    });
+
+    await fetchTasks();
+  };
+
+  // Cargar tareas al iniciar (sin warning)
+  useEffect(() => {
+    const loadTasks = async () => {
+      await fetchTasks();
     };
-    setTasks((prev) => [...prev, newTask]);
-  };
 
-  const toggleTask = (id) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id
-          ? { ...task, completed: !task.completed }
-          : task
-      )
-    );
-  };
-
-  const deleteTask = (id) => {
-    setTasks((prev) => prev.filter((task) => task.id !== id));
-  };
+    loadTasks();
+  }, []);
 
   return (
     <div
@@ -52,6 +78,7 @@ function App() {
         </h1>
 
         <TaskForm onAddTask={addTask} />
+
         <TaskList
           tasks={tasks}
           onToggleTask={toggleTask}
@@ -63,3 +90,4 @@ function App() {
 }
 
 export default App;
+
